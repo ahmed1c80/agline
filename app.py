@@ -21,7 +21,7 @@ import os
 import re
 app = Flask(__name__)
 
-
+port=3306
 #app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///students.db"
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://u804311892_agline:Ah#630540@193.203.184.99:3306/u804311892_agline"
 #app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:rootroot@localhost:3306/agline"
@@ -35,7 +35,16 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 def get_db_connection():
-    return pymysql.connect(host='193.203.184.99',port='3306', user='u804311892_agline', password='Ah#630540', database='u804311892_agline', cursorclass=pymysql.cursors.DictCursor)
+    return pymysql.connect(
+        host='193.203.184.99',
+        port=port,
+	ssl=None,
+	charset='utf8mb4',
+        user='u804311892_agline',
+        password='Ah#630540',
+        database='u804311892_agline',
+        cursorclass=pymysql.cursors.DictCursor
+    )
 '''
 from threading import Thread
 
