@@ -35,7 +35,7 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 def get_db_connection():
-    return pymysql.connect(host='193.203.184.99:3306', user='u804311892_agline', password='Ah#630540', database='u804311892_agline', cursorclass=pymysql.cursors.DictCursor)
+    return pymysql.connect(host='193.203.184.99',port='3306', user='u804311892_agline', password='Ah#630540', database='u804311892_agline', cursorclass=pymysql.cursors.DictCursor)
 '''
 from threading import Thread
 
