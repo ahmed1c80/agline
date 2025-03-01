@@ -13,6 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 from recommendation import get_recommendations
 #from sqlalchemy import create_engine
 from svd_main import get_recommend
+import requests	
  
 #✅ استخدام Random Forest لتوقع أداء الطالب في الدورات القادمة
 
@@ -35,9 +36,20 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 def get_db_connection():
     return pymysql.connect(host='localhost', user='root', password='rootroot', database='agline', cursorclass=pymysql.cursors.DictCursor)
+'''
+from threading import Thread
 
+def background_task():
+    import time
+    time.sleep(5)  # محاكاة مهمة طويلة
+    print("Task completed!")
 
-
+@app.route('/run_task')
+def run_task():
+    thread = Thread(target=background_task)
+    thread.start()
+    return "Task started!", 200
+'''
 
 
 
@@ -48,7 +60,7 @@ def dashboard():
     student_id = current_user.id
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT* FROM courses ")# WHERE enrollments.user_id = %s", (student_id,))
+    cursor.execute("SELECT *FROM courses")# cors  LEFTJOIN enrollments WHERE enrollments.user_id = %s", (student_id,))
     courses = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -194,11 +206,33 @@ def register():
 	
 	
 	
-	
+
+@app.route('/api/recommend_courses/<int:user_id>', methods=['GET'])
+def recommend_courses(user_id):
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # جلب المقررات التي لم يسجل فيها الطالب
+    completed_courses = [e.course_id for e in Enrollment.query.filter_by(user_id=user.id).all()]
+    available_courses = Course.query.filter(~Course.id.in_(completed_courses)).all()
+    
+    recommendations = []
+    for course in available_courses:
+        # تحليل البيانات ومعايير التوصية
+        if user.gpa >= course.gpa_requirement:
+            recommendations.append({
+                "course_id": course.id,
+                "course_name": course.name,
+                "reason": "Recommended based on GPA and previous courses."
+            })
+
+    return jsonify({"recommended_courses": recommendations,'gpa':user.gpa})	
 
 # ✅ API لاسترجاع الدورات الموصى بها بناءً على المعدل التراكمي
-@app.route('/api/recommend_courses', methods=['GET'])
-def recommend_courses():
+@app.route('/api/recommend_coursesp', methods=['GET'])
+def recommend_coursesp():
     if current_user.id==0:
         return jsonify({"error": "User not logged in"}), 401
 
@@ -226,7 +260,75 @@ def recommend_courses():
     cursor.close()
     conn.close()
 
-    return jsonify(recommendations)	
+    return jsonify(recommendations)
+	
+	
+# ✅ API لجلب الدورات من Udemy أو Coursera
+@app.route('/api/web_courses', methods=['GET'])
+def get_web_courses():
+    query = request.args.get("query", "Linear Algebra")
+    
+    # 🔹 استعلام Udemy API
+    udemy_url = "https://www.udemy.com/api-2.0/courses/"
+    udemy_params = {"search": query, "page_size": 5}
+    udemy_headers = {"Authorization": "Bearer YOUR_UDEMY_API_KEY"}
+
+    udemy_response = requests.get(udemy_url, params=udemy_params, headers=udemy_headers)
+    udemy_courses = udemy_response.json().get("results", []) if udemy_response.status_code == 200 else []
+
+    # 🔹 تجميع النتائج
+    recommendations = [{"title": c["title"], "url": c["url"], "platform": "Udemy"} for c in udemy_courses]
+
+    return jsonify(recommendations)
+
+
+
+@app.route('/get_chart_data')
+def get_chart_data():
+    data = {
+        "labels": ["جبر خطي", "تفاضل وتكامل", "إحصاء", "برمجة"],
+        "values": [85, 70, 60, 90]  # نسبة فهم الطالب في كل مادة
+    }
+    return jsonify(data)
+
+
+
+
+
+@app.route('/join_course', methods=['POST'])
+@login_required  # يتطلب تسجيل الدخول
+def join_course():
+    try:
+        data = request.get_json()  # استقبال البيانات من AJAX
+        course_id = data.get("course_id")
+
+        # التحقق من صحة البيانات
+        if not course_id:
+            return jsonify({"S":0,"error": "Course ID is required"}), 400
+
+        # التحقق من وجود الدورة
+        course = Course.query.get(course_id)
+        if not course:
+            return jsonify({"S":0,"error": "الدورة غير موجودة"}), 404
+
+        # التحقق مما إذا كان الطالب مسجلاً مسبقًا
+        existing_enrollment = Enrollment.query.filter_by(user_id=current_user.id, course_id=course_id).first()
+        if existing_enrollment:
+            return jsonify({"S":0,"error": "لقد قمت بالتسجيل بالفعل في هذه الدورة"}), 400
+
+        # تسجيل الطالب في الدورة
+        new_enrollment = Enrollment(user_id=current_user.id, course_id=course_id)
+        db.session.add(new_enrollment)
+        db.session.commit()
+
+        return jsonify({"S":1,"message": "تم الانضمام إلى الدورة بنجاح!"}), 200
+
+    except Exception as e:
+        return jsonify({"S":0,"error": str(e)}), 500
+
+
+
+
 # إنشاء الجداول في قاعدة البيانات
 with app.app_context():
     db.create_all()

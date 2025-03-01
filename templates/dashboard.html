@@ -125,42 +125,50 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-6">
+        <div class="col-lg-6" dir="rtl">
             <div class="card card-block card-stretch card-height">
                 <div class="card-header d-flex justify-content-between">
                     <div class="header-title">
-                        <h4 class="card-title">
+                        <h4 class="card-title" >
                             نقاط القوة والضعف
                         </h4>
                     </div>
-                    <div class="card-header-toolbar d-flex align-items-center">
-                        <div class="dropdown">
-                            <span class="dropdown-toggle dropdown-bg btn" id="dropdownMenuButton001"
-                                data-toggle="dropdown">
-                                هذا الشهر
-                                <i class="ri-arrow-down-s-line ml-1"></i>
-                            </span>
-                            <div class="dropdown-menu dropdown-menu-right shadow-none"
-                                aria-labelledby="dropdownMenuButton001">
-                                <a class="dropdown-item" href="#">
-                                    العام
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    الشهر
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    الاسبوع
-                                </a>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="card-body">
-                    <div id="layout1-chart1"></div>
+
+
+
+<canvas id="performanceChart"></canvas>
+<script>
+    const ctx3 = document.getElementById('performanceChart').getContext('2d');
+
+    new Chart(ctx3, {
+        type: 'line',
+        data: {
+            labels: ['2/2/2025', '3/2/2025', '4/2/2025', '5/2/2025'],
+            datasets: [{
+                label: 'تطور الأداء',
+                data: [60, 70, 80, 90], // تطور الدرجات على مدار الأشهر
+                borderColor: '#3498db',
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true, max: 100 }
+            }
+        }
+    });
+</script>
+
+
+
+
+
                 </div>
             </div>
         </div>
-        <div class="col-lg-6">
+        <div class="col-lg-6"  dir="rtl">
             <div class="card card-block card-stretch card-height">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <div class="header-title">
@@ -169,29 +177,41 @@
                         {{recommend}}
 						</h4>
                     </div>
-                    <div class="card-header-toolbar d-flex align-items-center">
-                        <div class="dropdown">
-                            <span class="dropdown-toggle dropdown-bg btn" id="dropdownMenuButton002"
-                                data-toggle="dropdown">
-                                هذا الشهر<i class="ri-arrow-down-s-line ml-1"></i>
-                            </span>
-                            <div class="dropdown-menu dropdown-menu-right shadow-none"
-                                aria-labelledby="dropdownMenuButton002">
-                                <a class="dropdown-item" href="#">
-                                    سنوي
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    شهري
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    اسبوعي
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
                 <div class="card-body">
-                    <div id="layout1-chart-5" style="min-height: 360px;"></div>
+				
+				
+    <canvas id="understandingChart"></canvas>
+
+    <script>
+        $(document).ready(function() {
+            $.ajax({
+                url: "/get_chart_data",  // استدعاء API من Flask
+                method: "GET",
+                success: function(response) {
+                    const ctx = document.getElementById('understandingChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: response.labels,
+                            datasets: [{
+                                label: 'مدى فهم الطالب (%)',
+                                data: response.values,
+                                backgroundColor: ['#3498db', '#e74c3c', '#f1c40f', '#2ecc71']
+                            }]
+                        },
+                        options: {
+                            scales: { y: { beginAtZero: true, max: 100 } }
+                        }
+                    });
+                },
+                error: function() {
+                    alert("فشل في تحميل البيانات!");
+                }
+            });
+        });
+    </script>
                 </div>
             </div>
         </div>
@@ -242,13 +262,53 @@
                             <p class="mb-2">{{course.instructor}}</p>
                             <p class="mb-0">{{course.description}}</p>
                             <p class="mb-0">{{course.university}}</p>
+  <div><a href="javascript:void(0);" class="btn btn-primary view-btn font-size-14 join-course-btn" data-course-id="{{course.id}}">
+                            الانظمام 
+                        </a>
+						<div class="spinner-grow" role="status" style="display:none">
+  <span class="sr-only"  aria-hidden="false">Loading...</span>
+</div>
+						</div>						
                         </div>
                     </div>
                 </div>
             </div>
                   {%endfor%}
         </div>
-    </div>
+   
+<script>
+    $(document).ready(function () {
+        $(".join-course-btn").click(function () {
+		var btn=$(this).parent('div');
+		$(this).hide();
+		btn.find(".spinner-grow").show();
+            let courseId = $(this).data("course-id");  // جلب معرف الدورة
+            
+            $.ajax({
+                url: "/join_course",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ course_id: courseId }),
+                success: function (response) {
+				if(response.S==0){
+		
+		btn.find("a").show();
+		btn.find(".spinner-grow").hide();
+       		
+				}
+                    alert(response.message);  // عرض رسالة النجاح
+                },
+                error: function (xhr, status, error) {
+				
+		btn.find("a").show();
+		btn.find(".spinner-grow").hide();
+                    alert("Error: " + xhr.responseJSON.error);  // عرض رسالة الخطأ
+                }
+            });
+        });
+    });
+</script>
+   </div>
     <!-- Page end  -->
 </div>
 <!-- AmCharts Core -->

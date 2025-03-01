@@ -27,7 +27,12 @@
 
         <link rel="stylesheet" hre="{{ url_for('static', filename='vendor/line-awesome/dist/line-awesome/css/line-awesome.min.css') }}">
         <link rel="stylesheet" hre="{{ url_for('static', filename='vendor/remixicon/fonts/remixicon.css') }}">
-    </head>
+   
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+   </head>
 <body>
     <!-- loader Start -->
      <div id="loading">
@@ -145,6 +150,7 @@
                                         <div class="p-3">
                                             <h5 class="mb-1">{{ user.full_name }}</h5>
                                             <p class="mb-0">{{user.phone}}</p>
+                                            <p class="mb-0">{{user.id}}</p>
                                             <div class="d-flex align-items-center justify-content-center mt-3">
                                                 <a href="AHMEDprofile') }}" class="btn border mr-2"  style="display:none">Profile</a>
                                                 <form action="/logout" method="get">
