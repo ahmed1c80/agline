@@ -10,9 +10,9 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from recommendation import get_recommendations
+#from recommendation import get_recommendations
 #from sqlalchemy import create_engine
-from svd_main import get_recommend
+#from svd_main import get_recommend
 import requests	
  
 #✅ استخدام Random Forest لتوقع أداء الطالب في الدورات القادمة
@@ -65,7 +65,7 @@ def dashboard():
     cursor.close()
     conn.close()
     #courses = Course.query.filter_by(user_id=current_user.id)
-    #recommendation = get_recommendations(1)  # مؤقتًا لـ user_id=1
+    #recommendation = (1)  # مؤقتًا لـ user_id=1
     #svd_main = get_recommend(current_user.id)  # مؤقتًا لـ user_id=1
 	 #print('ss',svd_main.tolist())
     return render_template(
@@ -129,13 +129,13 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('login'))
-
+'''
 @app.route('/recommend')
 @login_required
 def recommend():
     recommendations = get_recommendations(current_user.id)
     return render_template('recommend.html', title="Recommendations", recommendations=recommendations)
-
+'''
 
 
 @app.route('/myfile')
