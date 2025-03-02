@@ -21,7 +21,8 @@ import os
 import re
 app = Flask(__name__)
 
-port=3306
+port = 3306  # تأكد من أنه عدد صحيح
+
 #app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///students.db"
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://u804311892_agline:Ah#630540@193.203.184.99:3306/u804311892_agline"
 #app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:rootroot@localhost:3306/agline"
@@ -34,31 +35,19 @@ bcrypt = Bcrypt(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+#print(type(PORT))  # يجب أن يكون <class 'int'>
+
 def get_db_connection():
     return pymysql.connect(
         host='193.203.184.99',
         port=port,
-	ssl=None,
-	charset='utf8mb4',
+		ssl=None,
+		charset='utf8mb4',
         user='u804311892_agline',
         password='Ah#630540',
         database='u804311892_agline',
         cursorclass=pymysql.cursors.DictCursor
     )
-'''
-from threading import Thread
-
-def background_task():
-    import time
-    time.sleep(5)  # محاكاة مهمة طويلة
-    print("Task completed!")
-
-@app.route('/run_task')
-def run_task():
-    thread = Thread(target=background_task)
-    thread.start()
-    return "Task started!", 200
-'''
 
 
 
@@ -66,17 +55,20 @@ def run_task():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    student_id = current_user.id
+    user_id = current_user.id
     conn = get_db_connection()
+	
+	
+	
     cursor = conn.cursor()
-    cursor.execute("SELECT *FROM courses")# cors  LEFTJOIN enrollments WHERE enrollments.user_id = %s", (student_id,))
+    cursor.execute("""
+    SELECT courses.*, enrollments.id AS enr_id 
+    FROM courses 
+    LEFT JOIN enrollments ON courses.id = enrollments.course_id 
+    WHERE enrollments.user_id = %s
+    """, (user_id,))
     courses = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    #courses = Course.query.filter_by(user_id=current_user.id)
-    #recommendation = (1)  # مؤقتًا لـ user_id=1
-    #svd_main = get_recommend(current_user.id)  # مؤقتًا لـ user_id=1
-	 #print('ss',svd_main.tolist())
+    cursor.close()	
     return render_template(
     'dashboard.html',
     courses=courses,
@@ -116,6 +108,23 @@ def update_gpa():
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
+
+@app.route('/get_student_data')
+def get_student_data():
+    data = {
+        "understanding": {
+            "labels": ["جبر خطي", "تفاضل وتكامل", "إحصاء", "برمجة"],
+            "values": [0, 0, 0, 0]  # نسبة الفهم لكل دورة
+        },
+        "weakness": {
+            "labels": ["تفاضل وتكامل", "إحصاء", "برمجة"],  # المواد التي بها نقاط ضعف
+            "values": [0, 0, 0]  # نسبة الضعف في كل مادة
+        }
+    }
+    return jsonify(data)
+	
+	
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -138,44 +147,15 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('login'))
-'''
+
 @app.route('/recommend')
 @login_required
 def recommend():
     recommendations = get_recommendations(current_user.id)
     return render_template('recommend.html', title="Recommendations", recommendations=recommendations)
-'''
 
 
-@app.route('/myfile')
 
-@login_required
-def myfile():
-    
-    
-    return render_template('myfile.html')
-
-''''
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        #email = request.form['email']
-        password = request.form['password']
-
-        # تشفير كلمة المرور
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-
-        # إضافة المستخدم لقاعدة البيانات
-        new_user = User(username=username,  password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash('تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.', 'success')
-        return redirect(url_for('login'))
-
-    return render_template('register.html')
-'''
 
 # Validate Phone Number
 def is_valid_phone(phone):
@@ -233,7 +213,8 @@ def recommend_courses(user_id):
         if user.gpa >= course.gpa_requirement:
             recommendations.append({
                 "course_id": course.id,
-                "course_name": course.name,
+                "course_name": course.course_name,
+                "logo": course.logo,
                 "reason": "Recommended based on GPA and previous courses."
             })
 
@@ -292,13 +273,6 @@ def get_web_courses():
 
 
 
-@app.route('/get_chart_data')
-def get_chart_data():
-    data = {
-        "labels": ["جبر خطي", "تفاضل وتكامل", "إحصاء", "برمجة"],
-        "values": [85, 70, 60, 90]  # نسبة فهم الطالب في كل مادة
-    }
-    return jsonify(data)
 
 
 
@@ -345,6 +319,6 @@ with app.app_context():
 print(current_user)
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
-    #app.run(debug=True)
+	#app.run(debug=True)
    
     
